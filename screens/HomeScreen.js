@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, ScrollView, Dimensions, StatusBar, Image } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, Dimensions, StatusBar, Image, Alert } from 'react-native';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Menu, User, AlignJustify, Grid2x2 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -20,10 +21,9 @@ const HomeScreen = ({ navigation }) => {
     try {
       const response = await axios.get('https://api.rapidmock.com/api/vikuman/v1/movies/all');
       setMovies(response.data);
-      // console.log(response.data);
       setFilteredMovies(response.data);
     } catch (error) {
-      console.error(error);4
+      console.error(error);
     }
   };
 
@@ -50,6 +50,14 @@ const HomeScreen = ({ navigation }) => {
       const filtered = movies.filter((movie) => movie.type === type);
       setFilteredMovies(filtered);
     }
+  };
+
+  const handleMenuPress = () => {
+    Alert.alert('Menu', 'Menu options will appear here');
+  };
+
+  const handleProfilePress = () => {
+    navigation.navigate('Profile', { message: 'Profile screen placeholder' });
   };
 
   const renderMovieCard = ({ item }) => (
@@ -97,7 +105,16 @@ const HomeScreen = ({ navigation }) => {
         colors={['#1a1d2e', '#2a2d3e']}
         style={styles.header}
       >
-        <Text style={styles.title}>Movie Collection</Text>
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={handleMenuPress} style={styles.iconButton}>
+            <Menu color="#ffffff" size={24} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Movie Collection</Text>
+          <TouchableOpacity onPress={handleProfilePress} style={styles.iconButton}>
+            <User color="#ffffff" size={24} />
+          </TouchableOpacity>
+        </View>
+        
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
@@ -112,50 +129,53 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </LinearGradient>
 
-      {/* Controls */}
+      {/* Fixed Controls */}
       <LinearGradient
         colors={['#2a2d3e', '#1a1d2e']}
         style={styles.controlsContainer}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.controlsScroll}>
-          <View style={styles.controls}>
-            <View style={styles.filterButtons}>
-              <TouchableOpacity
-                style={[styles.filterBtn, activeFilter === 'all' && styles.activeFilter]}
-                onPress={() => filterByType('all')}
-              >
-                <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>
-                  All
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterBtn, activeFilter === 'movie' && styles.activeFilter]}
-                onPress={() => filterByType('movie')}
-              >
-                <Text style={[styles.filterText, activeFilter === 'movie' && styles.activeFilterText]}>
-                  Movies
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.filterBtn, activeFilter === 'show' && styles.activeFilter]}
-                onPress={() => filterByType('show')}
-              >
-                <Text style={[styles.filterText, activeFilter === 'show' && styles.activeFilterText]}>
-                  TV Shows
-                </Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.filterButtons}>
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilter === 'all' && styles.activeFilter]}
+            onPress={() => filterByType('all')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>
+              All
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilter === 'movie' && styles.activeFilter]}
+            onPress={() => filterByType('movie')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'movie' && styles.activeFilterText]}>
+              Movies
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilter === 'show' && styles.activeFilter]}
+            onPress={() => filterByType('show')}
+          >
+            <Text style={[styles.filterText, activeFilter === 'show' && styles.activeFilterText]}>
+              TV Shows
+            </Text>
+          </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterBtn, activeFilter === 'sort' && styles.activeFilter]} onPress={() => {
+          filterByType('sort')
+          sortAlphabetically();
+        }}>
+          <Text style={[styles.filterText, activeFilter === 'sort' && styles.activeFilterText]}>Sort A-Z</Text>
+        </TouchableOpacity>
 
-            <View style={styles.viewControls}>
-              <TouchableOpacity style={styles.controlBtn} onPress={sortAlphabetically}>
-                <Text style={styles.controlText}>Sort A-Z</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.controlBtn} onPress={() => setIsGridView(!isGridView)}>
-                <Text style={styles.controlText}>{isGridView ? 'List View' : 'Grid View'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ScrollView>
+        <TouchableOpacity 
+          style={styles.filterBtn}
+          onPress={() => setIsGridView(!isGridView)}
+        >
+          <Text style={styles.filterText}>
+            {isGridView ? <AlignJustify color={'grey'} size={18} /> : <Grid2x2 color={'grey'} size={18} />}
+          </Text>
+        </TouchableOpacity>
+        </View>
+        
       </LinearGradient>
 
       {/* Content */}
@@ -195,14 +215,21 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 20,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  iconButton: {
+    padding: 8,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '800',
     color: '#ffffff',
-    marginBottom: 20,
-    textAlign: 'center',
     letterSpacing: 0.5,
   },
   searchContainer: {
@@ -229,21 +256,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   controlsContainer: {
-    paddingVertical: 15,
-  },
-  controls: {
-    paddingHorizontal: 15,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   filterButtons: {
+    marginBottom:13,
     flexDirection: 'row',
-    marginRight: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginRight: 10,
@@ -262,19 +288,30 @@ const styles = StyleSheet.create({
   activeFilterText: {
     color: '#ffffff',
   },
-  viewControls: {
-    flexDirection: 'row',
-  },
-  controlBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+  viewToggle: {
+    padding: 10,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    marginLeft: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  controlText: {
+  viewToggleText: {
+    fontSize: 18,
+    color: '#ffffff',
+  },
+  sortBar: {
+    backgroundColor: '#1a1d2e',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  sortButton: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    padding: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  sortButtonText: {
     color: '#8a8fa8',
     fontSize: 14,
     fontWeight: '600',
@@ -309,7 +346,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-    opacity:0.5
+    opacity: 0.5,
   },
   placeholderPoster: {
     width: '100%',

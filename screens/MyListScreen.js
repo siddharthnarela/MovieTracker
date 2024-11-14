@@ -8,14 +8,90 @@ import {
   Image,
   Dimensions,
   Platform,
+  StatusBar,
+  Animated,
 } from 'react-native';
 import axios from 'axios';
+import { ArrowLeft } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const POSTER_WIDTH = 85;
 const SPACING = 16;
 
-const MyListScreen = () => {
+const TopBar = ({ navigation, tab, setTab }) => {
+  const tabIndicatorPosition = React.useRef(
+    new Animated.Value(tab === 'To Watch' ? 0 : 1)
+  ).current;
+
+  const animateTabIndicator = (newTab) => {
+    Animated.spring(tabIndicatorPosition, {
+      toValue: newTab === 'To Watch' ? 0 : 1,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 8,
+    }).start();
+  };
+
+  const handleTabPress = (newTab) => {
+    setTab(newTab);
+    animateTabIndicator(newTab);
+  };
+
+  const indicatorTranslateX = tabIndicatorPosition.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 150],
+  });
+
+  return (
+    <View style={styles.topBarContainer}>
+      <StatusBar barStyle="light-content" backgroundColor="#0A0B14" />
+      
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft color="#FFFFFF" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My List</Text>
+        <View style={styles.backButton} />
+      </View>
+
+      <View style={styles.tabBarWrapper}>
+        <View style={styles.tabContainer}>
+          <Animated.View
+            style={[
+              styles.tabIndicator,
+              {
+                transform: [{ translateX: indicatorTranslateX }],
+              },
+            ]}
+          />
+          {['To Watch', 'Watched'].map((title) => (
+            <TouchableOpacity
+              key={title}
+              style={styles.tab}
+              onPress={() => handleTabPress(title)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  tab === title && styles.activeTabText,
+                ]}
+              >
+                {title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const MyListScreen = ({ navigation }) => {
   const [myList, setMyList] = useState({ 'To Watch': [], 'Watched': [] });
   const [tab, setTab] = useState('To Watch');
   const [loading, setLoading] = useState(true);
@@ -46,32 +122,6 @@ const MyListScreen = () => {
   };
 
   const currentMovies = myList[tab] || [];
-
-  const CustomTabBar = () => (
-    <View style={styles.tabContainer}>
-      <View 
-        style={[
-          styles.tabIndicator,
-          { transform: [{ translateX: tab === 'To Watch' ? 0 : SCREEN_WIDTH * 0.35 }] }
-        ]} 
-      />
-      {['To Watch', 'Watched'].map((title) => (
-        <TouchableOpacity
-          key={title}
-          style={styles.tab}
-          onPress={() => setTab(title)}
-          activeOpacity={0.7}
-        >
-          <Text style={[
-            styles.tabText,
-            tab === title && styles.activeTabText
-          ]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
 
   const renderItem = ({ item }) => (
     <View style={styles.itemContainer}>
@@ -109,34 +159,37 @@ const MyListScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
-        <View style={styles.loadingIndicator} />
-        <Text style={styles.loadingText}>Loading your movies...</Text>
+      <View style={styles.container}>
+        <TopBar navigation={navigation} tab={tab} setTab={setTab} />
+        <View style={styles.centerContainer}>
+          <View style={styles.loadingIndicator} />
+          <Text style={styles.loadingText}>Loading your movies...</Text>
+        </View>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton} 
-          onPress={fetchMyList}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <TopBar navigation={navigation} tab={tab} setTab={setTab} />
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={fetchMyList}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <CustomTabBar />
-      </View>
-      
+      <TopBar navigation={navigation} tab={tab} setTab={setTab} />
       <View style={styles.contentContainer}>
         {currentMovies.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -168,24 +221,50 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A0B14',
   },
-  headerContainer: {
+  topBarContainer: {
     backgroundColor: '#0A0B14',
-    paddingTop: Platform.OS === 'ios' ? 44 : 0,
-    zIndex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    zIndex: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  contentContainer: {
-    flex: 1,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight + 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  centerContainer: {
-    flex: 1,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0A0B14',
+    borderRadius: 20,
+  },
+  tabBarWrapper: {
+    paddingHorizontal: 20,
+    paddingBottom: 12,
   },
   tabContainer: {
     flexDirection: 'row',
-    marginVertical: 24,
-    marginHorizontal: 20,
     height: 48,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderRadius: 24,
@@ -200,6 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     top: 4,
     left: 4,
+    zIndex: 0,
   },
   tab: {
     flex: 1,
@@ -214,6 +294,15 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: '#FFFFFF',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0B14',
   },
   listContainer: {
     padding: SPACING,
