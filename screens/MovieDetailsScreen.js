@@ -50,6 +50,9 @@ const MovieDetailsScreen = ({ route, navigation }) => {
     }
   };
 
+  const [add, setAdd] = useState(false);
+  const [watch, setWatch] = useState(false);
+
   // Add to watchlist function
   const addToList = async (status) => {
     try {
@@ -61,9 +64,11 @@ const MovieDetailsScreen = ({ route, navigation }) => {
       // Show success feedback (you can implement your own UI feedback)
       console.log(`Successfully added ${movieData.title} to ${status} list`);
       
-      // Optionally refresh the movie list
-      const updatedList = await axios.get('https://api.rapidmock.com/api/vikuman/v1/mylist');
-      console.log('Updated list:', updatedList.data);
+      if (status == 'To Watch') {
+        setAdd(true);
+      } else {
+        setWatch(true);
+      }
       
     } catch (error) {
       console.error('Error adding to list:', error);
@@ -181,6 +186,9 @@ const MovieDetailsScreen = ({ route, navigation }) => {
 
       {/* Action Buttons */}
       <View style={styles.actionContainer}>
+
+      {
+        add ? null :
         <TouchableOpacity
           style={[styles.actionButton, styles.watchButton]}
           onPress={() => addToList('To Watch')}
@@ -194,7 +202,10 @@ const MovieDetailsScreen = ({ route, navigation }) => {
           <MaterialCommunityIcons name="bookmark-plus-outline" size={20} color="#FFF" />
           <Text style={styles.actionButtonText}>Add to Watch</Text>
         </TouchableOpacity>
+      }
 
+      {
+        watch ? null :
         <TouchableOpacity
           style={[styles.actionButton, styles.watchedButton]}
           onPress={() => addToList('Watched')}
@@ -204,6 +215,8 @@ const MovieDetailsScreen = ({ route, navigation }) => {
             Mark as Watched
           </Text>
         </TouchableOpacity>
+      }
+
       </View>
     </View>
   );

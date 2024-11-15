@@ -6,6 +6,8 @@ import MyListScreen from './screens/MyListScreen';
 import MovieDetailsScreen from './screens/MovieDetailsScreen';
 import Profile from './screens/Profile';
 
+
+
 const Stack = createStackNavigator();
 
 export default function App() {
